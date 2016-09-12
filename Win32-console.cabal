@@ -14,7 +14,7 @@ Copyright:              (c) 2016 siracusa
 Stability:              experimental
 
 Build-Type:             Simple
-Cabal-Version:          >=1.2
+Cabal-Version:          >=1.8
 
 Extra-source-files:     CHANGELOG.md
                         README.md
@@ -28,7 +28,7 @@ Library
   Install-Includes:     WinConsoleWrapper.h
   C-Sources:            cbits/WinConsoleWrapper.c
 
-  Build-Depends:        base >= 4.2,
+  Build-Depends:        base >= 4.2 && < 5,
                         Win32 >= 2.2.0.1 && < 2.4
   Build-Tools:          hsc2hs
   GHC-Options:          -Wall
