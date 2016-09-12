@@ -32,3 +32,7 @@ Library
                         Win32 >= 2.2.0.1 && < 2.4
   Build-Tools:          hsc2hs
   GHC-Options:          -Wall
+
+Source-Repository head
+  Type:                 git
+  Location:             https://github.com/pavonia/Win32-console.git
