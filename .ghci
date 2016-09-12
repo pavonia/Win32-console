@@ -1,0 +1,10 @@
+:set -fno-warn-deprecated-flags
+:set -fobject-code
+
+:set -DGHCI
+:set -D_WIN32_WINNT=0x0501
+:set -isrc
+:set -outputdir dist\\ghci
+
+:def build-hsc \_ -> return ":! hsc2hs src\\System\\Win32\\Console\\Extra.hsc -I include"
+:def build-wrapper \_ -> return ":! rebuild-wrapper.bat WinConsoleWrapper dist\\ghci"
