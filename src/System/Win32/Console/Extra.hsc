@@ -420,7 +420,7 @@ eNABLE_PROCESSED_OUTPUT, eNABLE_WRAP_AT_EOL_OUTPUT :: DWORD
 eNABLE_PROCESSED_OUTPUT   = (#const ENABLE_PROCESSED_OUTPUT)
 eNABLE_WRAP_AT_EOL_OUTPUT = (#const ENABLE_WRAP_AT_EOL_OUTPUT)
 
-kEY_EVENT, mOUSE_EVENT, wINDOW_BUFFER_SIZE_EVENT, mENU_EVENT, fOCUS_EVENT :: DWORD
+kEY_EVENT, mOUSE_EVENT, wINDOW_BUFFER_SIZE_EVENT, mENU_EVENT, fOCUS_EVENT :: WORD
 kEY_EVENT                = (#const KEY_EVENT)
 mOUSE_EVENT              = (#const MOUSE_EVENT)
 wINDOW_BUFFER_SIZE_EVENT = (#const WINDOW_BUFFER_SIZE_EVENT)
@@ -793,13 +793,12 @@ instance Storable (KEY_EVENT_RECORD t) => Storable (INPUT_RECORD t) where
     alignment _ = (#alignment INPUT_RECORD)
     peek ptr = do
         evType <- (#peek INPUT_RECORD, EventType) ptr
-        let evTypeD = (toEnum . fromEnum :: WORD -> DWORD) evType
         event <- case evType of
-            _ | evTypeD == kEY_EVENT                -> InputKeyEvent              <$> (#peek INPUT_RECORD, Event.KeyEvent) ptr
-            _ | evTypeD == mOUSE_EVENT              -> InputMouseEvent            <$> (#peek INPUT_RECORD, Event.MouseEvent) ptr
-            _ | evTypeD == wINDOW_BUFFER_SIZE_EVENT -> InputWindowBufferSizeEvent <$> (#peek INPUT_RECORD, Event.WindowBufferSizeEvent) ptr
-            _ | evTypeD == mENU_EVENT               -> InputMenuEvent             <$> (#peek INPUT_RECORD, Event.MenuEvent) ptr
-            _ | evTypeD == fOCUS_EVENT              -> InputFocusEvent            <$> (#peek INPUT_RECORD, Event.FocusEvent) ptr
+            _ | evType == kEY_EVENT                -> InputKeyEvent              <$> (#peek INPUT_RECORD, Event.KeyEvent) ptr
+            _ | evType == mOUSE_EVENT              -> InputMouseEvent            <$> (#peek INPUT_RECORD, Event.MouseEvent) ptr
+            _ | evType == wINDOW_BUFFER_SIZE_EVENT -> InputWindowBufferSizeEvent <$> (#peek INPUT_RECORD, Event.WindowBufferSizeEvent) ptr
+            _ | evType == mENU_EVENT               -> InputMenuEvent             <$> (#peek INPUT_RECORD, Event.MenuEvent) ptr
+            _ | evType == fOCUS_EVENT              -> InputFocusEvent            <$> (#peek INPUT_RECORD, Event.FocusEvent) ptr
             _ -> error $ "peek (INPUT_RECORD): Unknown event type " ++ show evType
         return $ INPUT_RECORD evType event
     poke ptr val = do
