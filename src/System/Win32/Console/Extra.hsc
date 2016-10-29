@@ -186,6 +186,12 @@ module System.Win32.Console.Extra (
     c_GetConsoleTitleW,
     getConsoleTitle,
 
+    #if _WIN32_WINNT >= 0x0600
+    c_GetConsoleOriginalTitleA,
+    c_GetConsoleOriginalTitleW,
+    getConsoleOriginalTitle,
+    #endif
+
     #if _WIN32_WINNT >= 0x0500
     c_GetConsoleDisplayMode,
     getConsoleDisplayMode,
@@ -319,6 +325,9 @@ module System.Win32.Console.Extra (
         fromCTString,
 
         c_GetConsoleTitle,
+    #if _WIN32_WINNT >= 0x0600
+        c_GetConsoleOriginalTitle,
+    #endif           
         c_FillConsoleOutputCharacter,
         c_PeekConsoleInput,
         c_ReadConsole,
@@ -1038,6 +1047,39 @@ getConsoleTitle t = allocaArray0 maxConsoleTitleLen $ \ptrCStr -> do
     -- Check length s == n?
     return s
 
+-- According to MSDN
+#if _WIN32_WINNT >= 0x0600
+
+{-
+DWORD WINAPI GetConsoleOriginalTitle(
+  _Out_ LPTSTR lpConsoleTitle,
+  _In_  DWORD  nSize
+);
+-}
+foreign import stdcall "windows.h GetConsoleOriginalTitleA"
+    c_GetConsoleOriginalTitleA :: LPSTR -> DWORD -> IO DWORD
+
+foreign import stdcall "windows.h GetConsoleOriginalTitleW"
+    c_GetConsoleOriginalTitleW :: LPWSTR -> DWORD -> IO DWORD
+
+getConsoleOriginalTitle :: TChar c t => c -> IO String
+getConsoleOriginalTitle t = allocaArray0 maxConsoleTitleLen $ \ptrCStr -> do
+    -- In case of empty titles, GetConsoleOriginalTitle returns 0 too, so we don't know if the string is empty
+    -- or an error has occured. We set the last error to 0 and check if it has changed afterwards.
+    -- If GetLastError still returns 0 after the call to GetConsoleOriginalTitle, we assume the title is empty.
+    c_setLastError 0
+    n <- c_GetConsoleOriginalTitle t ptrCStr $ toEnum maxConsoleTitleLen + 1
+    s <- case n of
+        0 -> do
+            err <- getLastError
+            case err of
+                0 -> return ""
+                _ -> errorWin ("GetConsoleOriginalTitle" ++ suffix t)
+        _ -> peekCTString t ptrCStr
+    -- Check length s == n?
+    return s
+
+#endif
 
 -- According to MSDN and MSYS
 #if _WIN32_WINNT >= 0x0500
@@ -1686,6 +1728,9 @@ class (Storable t, Storable (UNICODE_ASCII_CHAR t), Eq t, Enum t) => TChar c t |
 
     c_FillConsoleOutputCharacter :: c -> HANDLE -> t -> DWORD -> Ptr COORD -> Ptr DWORD -> IO BOOL
     c_GetConsoleTitle :: c -> Ptr t -> DWORD -> IO DWORD
+#if _WIN32_WINNT >= 0x0600    
+    c_GetConsoleOriginalTitle :: c -> Ptr t -> DWORD -> IO DWORD
+#endif
     c_PeekConsoleInput :: c -> HANDLE -> Ptr (INPUT_RECORD t) -> DWORD -> LPDWORD -> IO BOOL
     c_ReadConsole :: c -> HANDLE -> LPVOID -> DWORD -> LPDWORD -> LPVOID -> IO BOOL
     c_ReadConsoleInput :: c -> HANDLE -> Ptr (INPUT_RECORD t) -> DWORD -> LPDWORD -> IO BOOL
@@ -1705,6 +1750,9 @@ instance TChar A CHAR where
     fromCTString A = map castCCharToChar
 
     c_GetConsoleTitle A = c_GetConsoleTitleA
+#if _WIN32_WINNT >= 0x0600    
+    c_GetConsoleOriginalTitle A = c_GetConsoleOriginalTitleA
+#endif
     c_FillConsoleOutputCharacter A = c_HsFillConsoleOutputCharacterA
     c_PeekConsoleInput A = c_PeekConsoleInputA
     c_ReadConsole A = c_ReadConsoleA
@@ -1725,6 +1773,9 @@ instance TChar W WCHAR where
     fromCTString W = cWcharsToChars
 
     c_GetConsoleTitle W = c_GetConsoleTitleW
+#if _WIN32_WINNT >= 0x0600    
+    c_GetConsoleOriginalTitle W = c_GetConsoleOriginalTitleW
+#endif
     c_FillConsoleOutputCharacter W = c_HsFillConsoleOutputCharacterW
     c_PeekConsoleInput W = c_PeekConsoleInputW
     c_ReadConsole W = c_ReadConsoleW
